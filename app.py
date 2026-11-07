@@ -119,17 +119,47 @@ except FileNotFoundError as exc:
     st.stop()
 features = required_features(models)
 
+st.session_state.setdefault("use_sample", False)
+st.session_state.setdefault("uploader_id", 0)
+
+
+def use_sample_data():
+    """Switch to the bundled sample and reset the uploader so the two never conflict."""
+    st.session_state.use_sample = True
+    st.session_state.uploader_id += 1
+
+
+def clear_sample_data():
+    st.session_state.use_sample = False
+
+
 with st.sidebar:
     st.header("1 · Test data")
-    uploaded = st.file_uploader("Upload a test CSV", type="csv")
+    uploaded = st.file_uploader(
+        "Upload a test CSV", type="csv", key=f"uploader_{st.session_state.uploader_id}"
+    )
+    if uploaded is not None:
+        st.session_state.use_sample = False  # an explicit upload always wins
     if SAMPLE_CSV.exists():
         st.download_button(
             "Download sample test_data.csv",
             data=SAMPLE_CSV.read_bytes(),
             file_name="test_data.csv",
             mime="text/csv",
-            help="The held-out test split from the notebook. Upload it back to try the app.",
+            help="The held-out test split from the notebook. Upload it back to try the app."
         )
+        st.markdown(
+            "<div style='opacity:0.7; margin:-0.25rem 0 -0.25rem 0.25rem;'>or</div>",
+            unsafe_allow_html=True,
+        )
+        st.button(
+            "Load sample data",
+            on_click=use_sample_data,
+            help="Evaluate the models on the bundled test_data.csv without uploading anything."
+        )
+        if st.session_state.use_sample:
+            st.caption("Using the bundled sample (test_data.csv).")
+            st.button("Clear sample data", on_click=clear_sample_data)
     with st.expander("Required CSV format"):
         st.write(
             f"One row per e-mail. The file needs the {len(features)} feature columns "
@@ -148,13 +178,20 @@ with st.sidebar:
              "AUC does not depend on the threshold.",
     )
 
-if uploaded is None:
-    st.info("Upload a test CSV in the sidebar to begin. You can download a ready-made sample there.")
+using_sample = uploaded is None and st.session_state.use_sample and SAMPLE_CSV.exists()
+if uploaded is None and not using_sample:
+    st.info(
+        "Upload a test CSV in the sidebar to begin, or click Load sample data "
+        "to try the app with the bundled test set."
+    )
     st.stop()
 
 try:
-    uploaded.seek(0)  # the buffer may already have been read on an earlier rerun
-    raw_df = pd.read_csv(uploaded)
+    if using_sample:
+        raw_df = pd.read_csv(SAMPLE_CSV)
+    else:
+        uploaded.seek(0)  # the buffer may already have been read on an earlier rerun
+        raw_df = pd.read_csv(uploaded)
 except Exception as exc:  # unreadable or empty file
     st.error(f"Could not read the file as CSV: {exc}")
     st.stop()
