@@ -66,7 +66,10 @@ Spam is the positive class.
 | Naive Bayes | 0.8527 | 0.9657 | 0.7454 | 0.9583 | 0.8385 | 0.7259 |
 | Support Vector Machine | **0.9371** | **0.9795** | **0.9464** | 0.8929 | **0.9188** | **0.8685** |
 
+Note: the Naive Bayes AUC is about 0.96575, so it displays as 0.9657 or 0.9658 depending on the numpy version used to run the code. All other values are identical across environments.
+
 Along with this, hyperparameters are also tuned. Tuned hyperparameters are,
+
 | Model | Best parameters | CV AUC |
 |---|---|---|
 | Logistic Regression | `C = 100` | 0.9803 |
