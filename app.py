@@ -130,6 +130,12 @@ with st.sidebar:
             mime="text/csv",
             help="The held-out test split from the notebook. Upload it back to try the app.",
         )
+    with st.expander("Required CSV format"):
+        st.write(
+            f"One row per e-mail. The file needs the {len(features)} feature columns "
+            f"(e.g. `{features[0]}`, `{features[-1]}`) plus a `{TARGET}` column with "
+            "1 = spam and 0 = not spam. Extra columns are ignored."
+        )
 
     st.header("2 · Model")
     chosen = st.selectbox("Choose a classifier", list(MODEL_FILES))
